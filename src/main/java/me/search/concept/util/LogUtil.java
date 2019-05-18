@@ -9,4 +9,7 @@ public final class LogUtil {
                 LocalDateTime.now() ,text));
     }
 
+    public static void info(Object text) {
+        info(String.valueOf(text));
+    }
 }

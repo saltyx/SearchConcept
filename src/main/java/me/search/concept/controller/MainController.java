@@ -18,6 +18,9 @@ import me.search.concept.util.http.ApiHttpClient;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -62,29 +65,22 @@ public class MainController {
     }
 
     private void readyConfig() throws Exception {
-        InputStream inputStream = getClass().getResourceAsStream("/config/token.token");
-        if (inputStream == null) {
-            AlertUtil.createErrorAlert("token文件不存在");
+
+        if (!Files.exists(Paths.get(FileUtil.getConfigPaht()))) {
+            AlertUtil.createErrorAlert("config文件不存在，请检查" + FileUtil.getConfigPaht());
             return;
         }
 
-        StringBuilder stringBuilder = new StringBuilder();
-        int c;
-        while ((c = inputStream.read()) != -1) {
-            if ((char) c != '\r') {
-                stringBuilder.append((char) c);
-            }
-        }
-
-        this.token = stringBuilder.toString();
-        if (this.token.isEmpty()) {
-           tryLogin();
+        List<String> strings = Files.readAllLines(Paths.get(FileUtil.getConfigPaht()));
+        if (strings.isEmpty()) {
+            tryLogin();
+        } else {
+            this.token = strings.get(0);
         }
     }
 
     private void readyDatabase() {
-        InputStream inputStream = getClass().getResourceAsStream("/database/concepts.db");
-        if (inputStream == null) {
+        if (!Files.exists(Paths.get(FileUtil.getDbPath()))) {
             AlertUtil.createErrorAlert("concepts.db不存在");
             ApplicationUtil.exit();
         }
@@ -170,60 +166,66 @@ public class MainController {
         });
     }
 
-    private void refresh() throws IOException {
+    private void refresh() {
         final List<Concepts> concepts = new ArrayList<>();
-        ApiHttpClient.getInstance().getConcepts(token, new ApiHttpClient.ApiCallable<List<BaseConcept>>() {
-            @Override
-            public void onSuccess(List<BaseConcept> value) {
-                for (BaseConcept baseConcept : value) {
-                    try {
-                        ApiHttpClient.getInstance().getConceptStocks(token, baseConcept.getConceptCode(),
-                            new ApiHttpClient.ApiCallable<List<String>>() {
-                                @Override
-                                public void onSuccess(List<String> value) {
-                                    for (String stockCode : value) {
-                                        Concepts temp = new Concepts();
-                                        temp.setUpdatedTime(baseConcept.getUpdatedTime());
-                                        temp.setStockCode(stockCode);
-                                        temp.setConceptName(baseConcept.getConceptName());
-                                        temp.setConceptCode(baseConcept.getConceptCode());
-                                        concepts.add(temp);
+        try {
+            ApiHttpClient.getInstance().getConcepts(token, new ApiHttpClient.ApiCallable<List<BaseConcept>>() {
+                @Override
+                public void onSuccess(List<BaseConcept> value) {
+                    for (BaseConcept baseConcept : value) {
+                        try {
+                            ApiHttpClient.getInstance().getConceptStocks(token, baseConcept.getConceptCode(),
+                                new ApiHttpClient.ApiCallable<List<String>>() {
+                                    @Override
+                                    public void onSuccess(List<String> value) {
+                                        for (String stockCode : value) {
+                                            Concepts temp = new Concepts();
+                                            temp.setUpdatedTime(baseConcept.getUpdatedTime());
+                                            temp.setStockCode(stockCode);
+                                            temp.setConceptName(baseConcept.getConceptName());
+                                            temp.setConceptCode(baseConcept.getConceptCode());
+                                            concepts.add(temp);
+                                        }
                                     }
-                                }
 
-                                @Override
-                                public void onInvalid(List<String> value) {
-                                    tryLogin();
-                                }
+                                    @Override
+                                    public void onInvalid(List<String> value) {
+                                        tryLogin();
+                                        refresh();
+                                    }
 
-                                @Override
-                                public void onFail(List<String> value) {
-                                    AlertUtil.createErrorAlert("获取股票概念失败");
-                                }
-                            });
-                    } catch (Exception e) {
-                        AlertUtil.createErrorAlert(e.getMessage());
-                        break;
+                                    @Override
+                                    public void onFail(List<String> value) {
+                                        AlertUtil.createErrorAlert("获取股票概念失败");
+                                    }
+                                });
+                        } catch (Exception e) {
+                            AlertUtil.createErrorAlert(e.getMessage());
+                            break;
+                        }
                     }
                 }
-            }
 
-            @Override
-            public void onInvalid(List<BaseConcept> value) {
-                tryLogin();
-            }
+                @Override
+                public void onInvalid(List<BaseConcept> value) {
+                    tryLogin();
+                }
 
-            @Override
-            public void onFail(List<BaseConcept> value) {
-                AlertUtil.createErrorAlert("获取所有概念失败");
-            }
-        });
+                @Override
+                public void onFail(List<BaseConcept> value) {
+                    AlertUtil.createErrorAlert("获取所有概念失败");
+                }
+            });
+        } catch (IOException e) {
+            e.printStackTrace();
+            AlertUtil.createErrorAlert(e.getMessage());
+            return;
+        }
 
         SQLite.getInstance().insertConcepts(concepts, new SQLite.ExecuteCallable<String>() {
             @Override
             public void onSuccess(String value) {
                 LogUtil.info("概念刷新成功");
-                //TODO 绑定到tableView
             }
 
             @Override

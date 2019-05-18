@@ -5,10 +5,22 @@ import java.nio.file.Paths;
 
 public final class FileUtil {
 
-    // TODO token放入数据库或者jar内文件
     public static void writeTokenFile(String token) throws Exception {
         LogUtil.info("写入 " + token);
-//        Files.write(Paths.get(FileUtil.class.getResource("/config/token.token").toURI()), token.getBytes());
+        LogUtil.info(getConfigPaht());
+        Files.write(Paths.get(getConfigPaht()), token.getBytes());
+    }
+
+    private static String currentPath() {
+        return System.getProperty("user.dir");
+    }
+
+    public static String getConfigPaht() {
+        return currentPath() + "\\config\\token.token";
+    }
+
+    public static String getDbPath() {
+        return currentPath() + "\\database\\concepts.db";
     }
 
 }

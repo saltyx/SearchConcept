@@ -2,6 +2,7 @@ package me.search.concept.persistent;
 
 import me.search.concept.model.ConceptTableViewItem;
 import me.search.concept.model.Concepts;
+import me.search.concept.util.FileUtil;
 import me.search.concept.util.LogUtil;
 
 import java.sql.Connection;
@@ -87,8 +88,8 @@ public enum SQLite implements SQLiteInterface {
 
     private static Connection getConnection() throws Exception {
         Class.forName("org.sqlite.JDBC");
-        Connection connection = DriverManager.getConnection("jdbc:sqlite:" +
-                SQLite.class.getResource("/database/concepts.db").getPath());
+        Connection connection = DriverManager.getConnection("jdbc:sqlite:" + FileUtil.getDbPath());
+        LogUtil.info(FileUtil.getDbPath());
         connection.setAutoCommit(false);
         return connection;
     }

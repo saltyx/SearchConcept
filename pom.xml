@@ -44,16 +44,16 @@
 
   <build>
     <finalName>SearchConcept</finalName>
-<!--    <resources>
+   <resources>
       <resource>
-        <targetPath>META-INF/resources</targetPath>
+        <targetPath>${project.build.outputDirectory}</targetPath>
         <filtering>false</filtering>
-        <directory>src/main/resources</directory>
+        <directory>src/main/resources/</directory>
         <includes>
-          <include>*</include>
+          <include>view/*</include>
         </includes>
       </resource>
-    </resources>-->
+    </resources>
     <plugins>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
@@ -64,7 +64,7 @@
           <target>${maven.compiler.target}</target>
         </configuration>
       </plugin>
-  <!--    <plugin>
+    <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-resources-plugin</artifactId>
         <version>2.7</version>
@@ -76,18 +76,20 @@
               <goal>copy-resources</goal>
             </goals>
             <configuration>
-              <outputDirectory>${project.build.outputDirectory}</outputDirectory>
+              <outputDirectory>${project.build.directory}</outputDirectory>
               <resources>
                 <resource>
-                  <targetPath>META-INF/resources</targetPath>
-                  <filtering>false</filtering>
-                  <directory>src/main/resources</directory>
+                  <directory>src/main/resources/</directory>
+                  <includes>
+                    <include>config/*</include>
+                    <include>database/*</include>
+                  </includes>
                 </resource>
               </resources>
             </configuration>
           </execution>
         </executions>
-      </plugin>-->
+      </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-shade-plugin</artifactId>
